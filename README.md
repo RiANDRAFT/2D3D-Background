@@ -10,6 +10,22 @@ A dependency-free browser library for animated backgrounds. It uses perspective 
 
 Open the sliders menu in the bottom-right corner to try any of the 45 scenes and adjust the colors, motion, and perspective. When you have a scene you want to use, open **Export for your site** to copy the HTML, CSS, and JavaScript separately. The export can keep the current scene or pick a random scene on each page load.
 
+## Technology
+
+| Technology | Role |
+| --- | --- |
+| HTML and CSS | Lay out the canvas and style the demo's settings and export controls. |
+| Vanilla JavaScript and Canvas 2D | Generate the scenes, calculate perspective, and draw each frame. The browser bundle has no third-party runtime dependencies. |
+| Node.js | Combines the scene modules and renderer into a single browser script and prepares the static demo in `dist/`. |
+| Netlify | Hosts the static demo. |
+
+## How the rendering works
+
+1. **Generate the scene.** Scene functions calculate points, shapes, and text from elapsed time and procedural inputs. The selected scene determines which function runs.
+2. **Project depth onto the canvas.** For 3D geometry, the renderer scales each point before translating it to screen coordinates. The shared `worldPoint(x, y, z)` helper uses a scale proportional to `1 / (z + 450)`, so points farther away appear smaller. Some effects draw directly in screen coordinates.
+3. **Animate and redraw.** The library uses `requestAnimationFrame` to draw successive frames with Canvas 2D. Pointer movement shifts the camera for parallax. The renderer caps pixel density and frame rate and respects the browser's reduced-motion preference by default.
+4. **Apply settings live.** The demo passes edits to `background.update()`. Export generates HTML and CSS for the canvas plus JavaScript that initializes the same library with your selected settings.
+
 ## Add a background to a page
 
 Copy [fragments-background.js](./dist/fragments-background.js) into your project. The bundle includes all 45 scenes and runs in modern browsers without npm, a CDN, WebGL, images, or bundled fonts. Keep the MIT license header when redistributing it.
