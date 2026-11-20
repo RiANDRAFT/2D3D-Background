@@ -2,6 +2,8 @@
 
 A dependency-free browser library for animated backgrounds. It uses perspective math to project three-dimensional coordinates onto a Canvas 2D surface. The original designs come from Fragments / Glass Link.
 
+**Current source version** · `0.1.0` ([package.json](./package.json))
+
 ## Live demo
 
 [Open the interactive demo](https://2d3d-background.netlify.app/)
@@ -137,6 +139,8 @@ To add a built-in design, add a renderer and register its ID in the appropriate 
 The scene art lives in `src/atmosphere.js` and `src/worlds*.js`. The standalone browser API lives in `src/background-standalone.template.js`. After a source change, run `node scripts/build-background.cjs` from the repo root to regenerate `dist/fragments-background.js`. Node.js is only needed to regenerate the bundle.
 
 ## Release and consume
+
+The build reads the version from [package.json](./package.json) and includes it in the generated JavaScript header. If you consume the bundle before a release is tagged, pin it to a specific upstream commit and record that commit in your project.
 
 Tag releases in GitHub and attach the generated browser bundle as a release asset. In a consuming project such as Digital Footprint, download the bundle from a specific release, keep its license header, and reference the local copy with a script tag. Record the upstream repo URL and release tag with the vendored file so future updates can be reviewed and reproduced.
 
