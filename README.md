@@ -2,9 +2,17 @@
 
 A dependency-free browser library for animated backgrounds. It uses perspective math to project three-dimensional coordinates onto a Canvas 2D surface. The original designs come from Fragments / Glass Link.
 
-Copy [fragments-background.js](./dist/fragments-background.js) into your project. It bundles all 45 original backgrounds, which use Canvas 2D to project depth and animate procedural shapes. It runs in modern browsers without npm, a CDN, WebGL, images, or bundled fonts. Keep the MIT license header when redistributing the file.
+## Live demo
+
+[Open the interactive demo](https://2d3d-background.netlify.app/)
+
+[![Tunnel scene with the Fragments settings menu open](./docs/demo-preview.png)](https://2d3d-background.netlify.app/)
+
+Open the sliders menu in the bottom-right corner to try any of the 45 scenes and adjust the colors, motion, and perspective. When you have a scene you want to use, open **Export for your site** to copy the HTML, CSS, and JavaScript separately. The export can keep the current scene or pick a random scene on each page load.
 
 ## Add a background to a page
+
+Copy [fragments-background.js](./dist/fragments-background.js) into your project. The bundle includes all 45 scenes and runs in modern browsers without npm, a CDN, WebGL, images, or bundled fonts. Keep the MIT license header when redistributing it.
 
 This example fills a hero section. Load the script before initializing the canvas. The canvas needs explicit CSS dimensions so its layout stays stable as the script adjusts its drawing resolution.
 

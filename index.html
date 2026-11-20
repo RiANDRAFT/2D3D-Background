@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fragments — Scene Settings</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+      background: #080b16;
+      color: #edf3fb;
+    }
+    body { margin: 0; }
+    main {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      align-items: end;
+      min-height: 100svh;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    section {
+      justify-self: start;
+      margin: clamp(1rem, 4vw, 4rem);
+      padding: clamp(1rem, 3vw, 2rem);
+      background: var(--menu-bg);
+      border: 1px solid var(--menu-border);
+      border-radius: 1rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 5vw, 3rem);
+      letter-spacing: -0.04em;
+    }
+    p { margin: 0.5rem 0 1.25rem; }
+    output { color: var(--menu-accent-text); }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    button {
+      min-height: 44px;
+      padding: 0.5rem 0.9rem;
+      border: 1px solid var(--menu-border);
+      border-radius: 0.5rem;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+    #shuffle { background: var(--menu-accent); border-color: var(--menu-border); color: var(--menu-on-accent); }
+    details { margin-top: 1rem; border-top: 1px solid var(--menu-border); }
+    summary { padding: 0.8rem 0; cursor: pointer; }
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+      gap: 0.9rem;
+    }
+    #settings-menu {
+      --menu-border: color-mix(in srgb, var(--menu-ink) 48%, var(--menu-bg));
+      --menu-field: color-mix(in srgb, var(--menu-ink) 5%, var(--menu-bg));
+      color: var(--menu-ink);
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      margin: 0;
+      border: 0;
+    }
+    #settings-menu > summary {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      box-sizing: border-box;
+      padding: 0;
+      list-style: none;
+      border: 1px solid var(--menu-border);
+      border-radius: 0.75rem;
+      background: var(--menu-bg);
+    }
+    #settings-menu > summary::-webkit-details-marker { display: none; }
+    #settings-menu[open] > summary {
+      color: var(--menu-on-accent);
+      background: var(--menu-accent);
+    }
+    .settings-icon, .settings-icon span {
+      position: relative;
+      display: block;
+      width: 20px;
+    }
+    .settings-icon span {
+      height: 2px;
+      background: currentColor;
+      margin: 5px 0;
+    }
+    .settings-icon span::after {
+      position: absolute;
+      top: -3px;
+      left: 3px;
+      width: 8px;
+      height: 8px;
+      box-sizing: border-box;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      background: var(--menu-bg);
+      content: "";
+    }
+    .settings-icon span + span::after { left: 11px; }
+    #settings-menu[open] .settings-icon span::after { background: var(--menu-accent); }
+    #panel {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + 0.75rem);
+      box-sizing: border-box;
+      width: min(31rem, calc(100vw - 2rem));
+      max-height: calc(100dvh - 6rem);
+      margin: 0;
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+    label { display: grid; gap: 0.35rem; min-width: 0; }
+    label span { display: flex; justify-content: space-between; gap: 0.3rem; }
+    input, select { box-sizing: border-box; width: 100%; min-width: 0; accent-color: var(--menu-accent); font: inherit; }
+    input:not([type="range"], [type="checkbox"]), select {
+      min-height: 2.4rem;
+      border: 1px solid var(--menu-border);
+      border-radius: 0.4rem;
+      background: var(--menu-field);
+      color: inherit;
+      padding: 0.3rem 0.5rem;
+    }
+    input[type="range"] { margin: 0; }
+    .checkbox { display: flex; align-items: center; }
+    .checkbox input { width: auto; }
+    .export-code {
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 12rem;
+      margin: 0.75rem 0;
+      padding: 0.75rem;
+      resize: vertical;
+      border: 1px solid var(--menu-border);
+      border-radius: 0.4rem;
+      background: var(--menu-field);
+      color: inherit;
+      font: 0.85rem/1.5 monospace;
+    }
+    #copy-status { align-self: center; }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <canvas id="background" aria-hidden="true"></canvas>
+    <details id="settings-menu">
+      <summary aria-label="Scene controls" aria-controls="panel">
+        <span class="settings-icon" aria-hidden="true"><span></span><span></span></span>
+      </summary>
+      <section id="panel" aria-labelledby="title">
+        <h1 id="title">Fragments</h1>
+        <p>Current scene <output id="scene"></output></p>
+        <div class="actions">
+          <button id="shuffle" type="button">Shuffle scene</button>
+          <button id="playback" type="button">Pause</button>
+        </div>
+        <details open>
+          <summary>Scene settings</summary>
+          <div class="fields" id="appearance">
+            <label>Scene
+              <select id="scene-picker">
+                <option value="random">Random</option>
+              </select>
+            </label>
+          </div>
+        </details>
+        <details id="typography" hidden>
+          <summary>Scene text</summary>
+          <div class="fields" id="text-fields"></div>
+        </details>
+        <details>
+          <summary>Rendering settings</summary>
+          <div class="fields" id="rendering"></div>
+        </details>
+        <details id="export-panel">
+          <summary>Export for your site</summary>
+          <p>Paste the HTML where the background should appear. Save the CSS as <code>fragments-scene.css</code> and the JavaScript as <code>fragments-scene.js</code>. Place both files and <code>fragments-background.js</code> from the <code>dist</code> folder next to your HTML page.</p>
+          <label class="checkbox">
+            <input id="export-random" type="checkbox">
+            Pick a random scene on each page load
+          </label>
+          <details open>
+            <summary>HTML</summary>
+            <textarea id="export-html" class="export-code" aria-label="HTML code" readonly spellcheck="false"></textarea>
+            <button data-copy="export-html" type="button">Copy HTML</button>
+          </details>
+          <details>
+            <summary>CSS</summary>
+            <textarea id="export-css" class="export-code" aria-label="CSS code" readonly spellcheck="false"></textarea>
+            <button data-copy="export-css" type="button">Copy CSS</button>
+          </details>
+          <details>
+            <summary>JavaScript</summary>
+            <textarea id="export-js" class="export-code" aria-label="JavaScript code" readonly spellcheck="false"></textarea>
+            <button data-copy="export-js" type="button">Copy JavaScript</button>
+          </details>
+          <output id="copy-status" aria-live="polite"></output>
+        </details>
+      </section>
+    </details>
+  </main>
+  <script src="./dist/fragments-background.js"></script>
+  <script>
+    const settings = {
+      ...FragmentsBackground.defaults,
+      scene: 'random',
+      color: '#78e8d0',
+      background: '#080b16',
+      speed: 0.75,
+      parallax: 0.5
+    };
+    const background = FragmentsBackground.create('#background', settings);
+
+    const sceneName = document.getElementById('scene');
+    const scenePicker = document.getElementById('scene-picker');
+    const typography = document.getElementById('typography');
+    const textScenes = new Set(['data', 'nameorbit', 'namewarp', 'typesphere', 'floatingwords', 'wordhelix']);
+    const exportPanel = document.getElementById('export-panel');
+    const exportRandom = document.getElementById('export-random');
+    const exportHtml = document.getElementById('export-html');
+    const exportCss = document.getElementById('export-css');
+    const exportJs = document.getElementById('export-js');
+    const copyStatus = document.getElementById('copy-status');
+    const settingsMenu = document.getElementById('settings-menu');
+
+    function luminance(hex) {
+      const channels = hex.slice(1).match(/../g).map(pair => {
+        const channel = parseInt(pair, 16) / 255;
+        return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+    }
+
+    function updateMenuTheme() {
+      const base = luminance(settings.background);
+      const accent = luminance(settings.color);
+      const ink = base > 0.179 ? '#000' : '#fff';
+      const accentContrast = (Math.max(base, accent) + 0.05) / (Math.min(base, accent) + 0.05);
+      settingsMenu.style.colorScheme = base > 0.179 ? 'light' : 'dark';
+      settingsMenu.style.setProperty('--menu-bg', settings.background);
+      settingsMenu.style.setProperty('--menu-ink', ink);
+      settingsMenu.style.setProperty('--menu-accent', settings.color);
+      settingsMenu.style.setProperty('--menu-on-accent', accent > 0.179 ? '#000' : '#fff');
+      settingsMenu.style.setProperty('--menu-accent-text', accentContrast >= 4.5 ? settings.color : ink);
+    }
+    updateMenuTheme();
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && settingsMenu.open) {
+        settingsMenu.open = false;
+        settingsMenu.firstElementChild.focus();
+      }
+    });
+
+    exportHtml.value = `<link rel="stylesheet" href="./fragments-scene.css">
+<script defer src="./fragments-background.js"><\/script>
+<script defer src="./fragments-scene.js"><\/script>
+
+<section class="fragments-hero">
+  <canvas id="fragments-canvas" aria-hidden="true"></canvas>
+  <!-- Add your content here. -->
+</section>`;
+
+    exportCss.value = `.fragments-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 60vh;
+}
+
+#fragments-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}`;
+
+    function updateExport() {
+      copyStatus.value = '';
+      if (!exportPanel.open) return;
+
+      const config = {
+        ...settings,
+        scene: exportRandom.checked ? 'random' : background.scene
+      };
+      delete config.params; // Reserved for custom scene callbacks.
+      const options = JSON.stringify(config, null, 2);
+      exportJs.value = `FragmentsBackground.create('#fragments-canvas', ${options});`;
+    }
+
+    exportPanel.addEventListener('toggle', updateExport);
+    exportRandom.addEventListener('change', updateExport);
+    for (const button of exportPanel.querySelectorAll('[data-copy]')) {
+      button.addEventListener('click', async () => {
+        updateExport();
+        const code = document.getElementById(button.dataset.copy);
+        try {
+          await navigator.clipboard.writeText(code.value);
+          copyStatus.value = `${code.getAttribute('aria-label')} copied.`;
+        } catch {
+          code.focus();
+          code.select();
+          copyStatus.value = 'Press Ctrl+C or Command+C to copy.';
+        }
+      });
+    }
+
+    function showScene() {
+      sceneName.value = background.scene;
+      typography.hidden = !textScenes.has(background.scene);
+      rainSpeed.hidden = background.scene !== 'data';
+      updateExport();
+    }
+
+    for (const scene of [...FragmentsBackground.scenes].sort()) {
+      scenePicker.add(new Option(scene, scene));
+    }
+    scenePicker.addEventListener('change', () => {
+      background.update({ scene: scenePicker.value });
+      showScene();
+    });
+    document.getElementById('shuffle').addEventListener('click', () => {
+      background.shuffle();
+      scenePicker.value = 'random';
+      showScene();
+    });
+
+    function addField(group, key, title, type, min, max, step) {
+      const label = document.createElement('label');
+      const caption = document.createElement('span');
+      caption.textContent = title;
+      const input = document.createElement('input');
+      input.type = type;
+      label.append(caption, input);
+      if (min !== undefined) {
+        input.min = min;
+        input.max = max;
+        input.step = step;
+      }
+
+      if (type === 'checkbox') {
+        label.className = 'checkbox';
+        input.checked = settings[key];
+      } else {
+        input.value = settings[key];
+      }
+
+      const readout = document.createElement('span');
+      if (type === 'range') {
+        readout.setAttribute('aria-hidden', 'true');
+        readout.textContent = input.value;
+        caption.append(readout);
+      }
+
+      input.addEventListener(type === 'number' ? 'change' : 'input', () => {
+        let value = input.value;
+        if (type === 'number' || type === 'range') {
+          if (!input.value || !input.validity.valid) {
+            input.value = settings[key];
+            return;
+          }
+          value = input.valueAsNumber;
+        } else if (type === 'checkbox') {
+          value = input.checked;
+        }
+        background.update({ [key]: value });
+        settings[key] = value;
+        if (key === 'background' || key === 'color') updateMenuTheme();
+        if (type === 'range') readout.textContent = input.value;
+        updateExport();
+      });
+      document.getElementById(group).append(label);
+      return label;
+    }
+
+    addField('appearance', 'color', 'Accent color', 'color');
+    addField('appearance', 'background', 'Background color', 'color');
+    addField('appearance', 'opacity', 'Opacity', 'range', 0, 1, 0.01);
+    addField('appearance', 'speed', 'Speed', 'range', 0, 10, 0.05);
+    addField('appearance', 'parallax', 'Parallax', 'range', 0, 5, 0.05);
+    addField('appearance', 'zoom', 'Zoom', 'range', 0.1, 5, 0.05);
+    addField('appearance', 'perspective', 'Perspective', 'range', 0.1, 5, 0.05);
+    addField('appearance', 'glow', 'Glow', 'range', 0, 1, 0.005);
+    addField('appearance', 'vignette', 'Vignette', 'range', 0, 1, 0.01);
+    addField('text-fields', 'text', 'Display text', 'text');
+    addField('text-fields', 'font', 'Font family', 'text');
+    const rainSpeed = addField('text-fields', 'rainSpeed', 'Rain speed', 'range', 0.01, 10, 0.01);
+    addField('rendering', 'maxFps', 'Max FPS', 'number', 1, 120, 1);
+    addField('rendering', 'maxDpr', 'Max pixel ratio', 'number', 0.25, 4, 0.05);
+    addField('rendering', 'maxPixels', 'Max render pixels', 'number', 1, 20000000, 1);
+    addField('rendering', 'respectReducedMotion', 'Respect reduced motion', 'checkbox');
+    showScene();
+
+    const playback = document.getElementById('playback');
+    let paused = false;
+    playback.addEventListener('click', () => {
+      paused = !paused;
+      if (paused) {
+        background.pause();
+      } else {
+        background.resume();
+      }
+      playback.textContent = paused ? 'Resume' : 'Pause';
+    });
+  </script>
+</body>
+</html>
