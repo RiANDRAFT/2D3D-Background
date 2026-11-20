@@ -1,0 +1,11 @@
+{
+  "name": "canvas-2d-3d-perspective",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Canvas 2D animated backgrounds with 3D perspective",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build-background.cjs",
+    "check": "node --check dist/fragments-background.js"
+  }
+}
